@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTD Mind Sweep</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  line-height: 1.5;
+  padding-bottom: 4rem;
+}
+
+/* ── Sticky Header ── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #d2d2d7;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.header h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-right: auto;
+}
+.header .progress {
+  font-size: 0.85rem;
+  color: #6e6e73;
+}
+.header-btn {
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 500;
+}
+.header-btn:hover { background: #f0f0f0; }
+.header-btn.export {
+  background: #0071e3;
+  color: #fff;
+  border-color: #0071e3;
+}
+.header-btn.export:hover { background: #0060c0; }
+.header-btn.export:disabled {
+  background: #a1c4e8;
+  border-color: #a1c4e8;
+  cursor: not-allowed;
+}
+
+/* ── Main ── */
+main { max-width: 800px; margin: 24px auto; padding: 0 16px; }
+
+/* ── Top-level Section ── */
+.section { margin-bottom: 24px; }
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #d2d2d7;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.section-header h2 { font-size: 1.05rem; font-weight: 600; flex: 1; }
+.section-toggle-all {
+  font-size: 0.78rem;
+  color: #0071e3;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 2px 6px;
+}
+.section-toggle-all:hover { text-decoration: underline; }
+.chevron {
+  display: inline-block;
+  width: 18px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #86868b;
+  transition: transform 0.15s;
+}
+.chevron.open { transform: rotate(90deg); }
+.section-body { padding: 8px 0 0 0; display: none; }
+.section.open > .section-body { display: block; }
+
+/* ── Category Card ── */
+.card {
+  background: #fff;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.card.has-items { border-color: #0071e3; border-width: 1.5px; }
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.card-header .card-name { flex: 1; font-size: 0.92rem; font-weight: 500; }
+.badge {
+  font-size: 0.72rem;
+  background: #0071e3;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-weight: 600;
+  display: none;
+}
+.card.has-items .badge { display: inline-block; }
+.card-body { display: none; padding: 0 14px 14px; }
+.card.open > .card-body { display: block; }
+
+/* ── Trigger list ── */
+.triggers { margin-bottom: 10px; }
+.triggers ul {
+  list-style: disc;
+  padding-left: 20px;
+  font-size: 0.84rem;
+  color: #6e6e73;
+}
+.triggers li { margin-bottom: 2px; }
+
+/* ── Checkbox ── */
+.has-items-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+.has-items-check input { cursor: pointer; }
+
+/* ── Capture area ── */
+.capture-area { display: none; }
+.capture-area.visible { display: block; }
+.capture-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.capture-row input[type="text"] {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-family: inherit;
+}
+.capture-row input[type="text"]:focus {
+  outline: none;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 2px rgba(0,113,227,0.15);
+}
+.type-toggle {
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border: 1px solid #d2d2d7;
+  border-radius: 5px;
+  background: #f5f5f7;
+  cursor: pointer;
+  font-weight: 600;
+  min-width: 62px;
+  text-align: center;
+  white-space: nowrap;
+}
+.type-toggle.project {
+  background: #0071e3;
+  color: #fff;
+  border-color: #0071e3;
+}
+.remove-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #86868b;
+  padding: 2px 6px;
+  line-height: 1;
+}
+.remove-btn:hover { color: #e30000; }
+.add-item-btn {
+  font-size: 0.82rem;
+  color: #0071e3;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 4px 0;
+}
+.add-item-btn:hover { text-decoration: underline; }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+}
+.modal-overlay.visible { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 700px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px;
+  position: relative;
+}
+.modal h2 { font-size: 1.05rem; margin-bottom: 4px; }
+.modal .instruction {
+  font-size: 0.82rem;
+  color: #6e6e73;
+  margin-bottom: 14px;
+}
+.modal pre {
+  background: #f5f5f7;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 30vh;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+.modal-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.modal-buttons button {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1px solid #d2d2d7;
+  background: #fff;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+.modal-buttons button:hover { background: #f0f0f0; }
+.modal-buttons .copy-btn {
+  background: #0071e3;
+  color: #fff;
+  border-color: #0071e3;
+}
+.modal-buttons .copy-btn:hover { background: #0060c0; }
+.modal-buttons .close-btn { margin-left: auto; }
+
+:focus-visible {
+  outline: 2px solid #0071e3;
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>GTD Mind Sweep</h1>
+  <span class="progress" id="progress"></span>
+  <button class="header-btn" id="clearBtn">Clear session</button>
+  <button class="header-btn export" id="exportBtn" disabled>Export</button>
+</header>
+
+<main id="app"></main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" id="modal">
+    <h2>Mind Sweep Export</h2>
+    <p class="instruction">Paste this into Claude in the Productivity &amp; Project Management project.</p>
+    <h3 style="font-size:0.85rem;margin-bottom:6px;">Plaintext</h3>
+    <pre id="exportPlaintext"></pre>
+    <h3 style="font-size:0.85rem;margin-bottom:6px;">JSON</h3>
+    <pre id="exportJson"></pre>
+    <div class="modal-buttons">
+      <button class="copy-btn" id="copyJsonBtn">Copy JSON</button>
+      <button class="copy-btn" id="copyPlaintextBtn" style="background:#34c759;border-color:#34c759;">Copy plaintext</button>
+      <button class="close-btn" id="closeModalBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// TRIGGER LIST — edit this data only
+// ═══════════════════════════════════════════
+const TRIGGER_LIST = {
+  "Personal": {
+    "Projects & Commitments": [
+      "Projects started, not completed",
+      "Projects that need to be started",
+      "Commitments/promises to others (spouse, partner, children, parents, family, friends, professionals)",
+      "Returnable items"
+    ],
+    "Communications": [
+      "Calls to make or return",
+      "Emails to send or respond to",
+      "Cards, letters, thank-you's to write",
+      "Texts to follow up on"
+    ],
+    "Upcoming Events": [
+      "Birthdays, anniversaries, weddings, graduations",
+      "Holidays, travel, vacations",
+      "Dinners, parties, receptions",
+      "Cultural events, sporting events",
+      "School events, parent-teacher conferences"
+    ],
+    "Family": [
+      "Projects/activities with spouse or partner",
+      "Projects/activities with children",
+      "Projects/activities with parents or relatives",
+      "Conversations I need to have"
+    ],
+    "Administration": [
+      "Bills to pay",
+      "Filing, paperwork, forms",
+      "Home office supplies and equipment",
+      "Data backup, cloud storage",
+      "Subscriptions to review or cancel"
+    ],
+    "Home/Household": [
+      "Repairs needed (plumbing, electrical, HVAC, roof)",
+      "Remodeling or construction projects",
+      "Landscaping, driveways, garage",
+      "Furniture, decor, walls, floors, ceilings",
+      "Appliances, lights, fixtures",
+      "Kitchen, laundry, cleaning, organizing",
+      "Storage areas to clear or reorganize"
+    ],
+    "Technology (Personal)": [
+      "Computers — hardware, software, updates",
+      "Phones — setup, repairs, upgrades, settings",
+      "Smart home devices",
+      "Streaming services, media libraries",
+      "Password manager, security, accounts",
+      "Photos — backup, organization, albums",
+      "TV and entertainment setup",
+      "Internet/network issues"
+    ],
+    "Financial": [
+      "Bills, payments, autopay review",
+      "Bank accounts, statements",
+      "Investments, retirement accounts",
+      "Loans, mortgage",
+      "Taxes — preparation, estimated payments, filings",
+      "Budget review, spending tracking",
+      "Insurance — review coverage, claims",
+      "Legal affairs — wills, trusts, estate planning"
+    ],
+    "Health": [
+      "Doctor, dentist, specialist appointments",
+      "Checkups due or overdue",
+      "Prescriptions to refill",
+      "Diet, food, nutrition adjustments",
+      "Exercise routines, equipment, memberships",
+      "Mental health, counseling",
+      "Sleep, recovery"
+    ],
+    "Personal Development": [
+      "Classes, seminars, certifications",
+      "Books to read",
+      "Courses — online or in-person",
+      "Creative projects or expressions",
+      "Career-adjacent learning",
+      "Faith and spiritual growth"
+    ],
+    "Leisure": [
+      "Music, podcasts, videos to explore",
+      "Travel — places to visit, trips to plan",
+      "People to visit or connect with",
+      "Hobbies, sports equipment, supplies",
+      "Cooking, recipes to try",
+      "Photography"
+    ],
+    "Transportation": [
+      "Vehicle maintenance, repairs",
+      "Registration, insurance, inspections",
+      "Commuting changes",
+      "Bikes, recreational vehicles"
+    ],
+    "Clothes & Personal Items": [
+      "Professional wardrobe gaps",
+      "Casual, formal, athletic wear",
+      "Accessories, luggage",
+      "Repairs, tailoring, donations"
+    ],
+    "Errands": [
+      "Pharmacy, grocery, hardware store",
+      "Bank, post office",
+      "Gifts to buy",
+      "Returns or exchanges"
+    ],
+    "Community & Service": [
+      "Neighborhood, neighbors",
+      "Civic involvement, local government",
+      "Volunteer commitments",
+      "Schools, parent involvement"
+    ],
+    "Faith & Church": [
+      "Bible study — passages, resources, plans",
+      "Family discipleship — conversations, activities, rhythms",
+      "Elder responsibilities — meetings, pastoral care, decisions pending",
+      "Safety team — training, protocols, equipment, volunteers, incidents to review",
+      "Service commitments — upcoming or recurring",
+      "Hospitality — people to have over, follow-through from past gatherings"
+    ],
+    "Waiting For (Personal)": [
+      "Mail orders, deliveries",
+      "Items out for repair",
+      "Reimbursements owed",
+      "Loaned items to get back",
+      "RSVPs awaited",
+      "Information or decisions from others"
+    ]
+  },
+  "Professional": {
+    "Projects & Commitments": [
+      "Projects started, not completed",
+      "Projects that need to be started",
+      "'Look into' projects",
+      "Commitments/promises to boss, partners, colleagues",
+      "Commitments to subordinates or direct reports",
+      "Commitments to customers or external organizations",
+      "Decisions that need to be made — who needs to know?"
+    ],
+    "Communications": [
+      "Calls to make or return",
+      "Emails to send, respond to, or follow up on",
+      "Voicemails, memos, formal letters",
+      "Slack or Teams messages to respond to",
+      "Conversations I've been avoiding"
+    ],
+    "Writing & Documents": [
+      "Reports, evaluations, reviews to finish",
+      "Proposals to write or submit",
+      "Articles, summaries, instructions",
+      "Status updates, meeting minutes",
+      "Rewrites and edits in progress"
+    ],
+    "Meetings": [
+      "Upcoming meetings to prepare for",
+      "Meetings that need to be scheduled",
+      "Meetings that need debrief or follow-up action"
+    ],
+    "Read/Review": [
+      "Industry articles, reports, research",
+      "Books, periodicals",
+      "Websites, newsletters, email subscriptions",
+      "Documents awaiting my review or approval"
+    ],
+    "Financial (Professional)": [
+      "Budget reviews, forecasts",
+      "P&L, balance sheet",
+      "Receivables, payables",
+      "Expense reports to submit",
+      "Vendor contracts or invoices",
+      "Credit line, banking matters"
+    ],
+    "Planning & Strategy": [
+      "Goals, targets, objectives to review or set",
+      "Business plans, marketing plans",
+      "Upcoming events, conferences, travel to plan",
+      "Presentations to prepare"
+    ],
+    "Organization & Operations": [
+      "Org chart, reporting structure",
+      "Job descriptions, role clarity",
+      "Change initiatives in progress",
+      "Culture, morale, team health"
+    ],
+    "Administration": [
+      "Legal issues, compliance",
+      "Insurance, risk management",
+      "Policies and procedures to update",
+      "Training programs or requirements"
+    ],
+    "Staff & Team": [
+      "Hiring, onboarding",
+      "Performance reviews, feedback due",
+      "Staff development conversations",
+      "Compensation, recognition",
+      "Delegation — things I've handed off but not confirmed complete"
+    ],
+    "Systems & Tools": [
+      "Software — licenses, updates, migrations",
+      "Hardware, office equipment",
+      "Databases, file systems, storage",
+      "AI tools and workflows to set up or review",
+      "Automations that may have broken",
+      "Business cards, stationery, supplies"
+    ],
+    "Sales & Marketing": [
+      "Customer relationships to tend",
+      "Prospects, leads, pipeline",
+      "Proposals outstanding",
+      "Marketing materials to update",
+      "Public relations items"
+    ],
+    "Professional Development": [
+      "Training, certifications, seminars",
+      "Skills to develop or practice",
+      "Things to learn or research",
+      "Books, courses, podcasts",
+      "Career planning, resume, positioning",
+      "Networking — people to connect with"
+    ],
+    "Waiting For (Professional)": [
+      "Delegated tasks not yet confirmed complete",
+      "Replies to communications",
+      "Responses to proposals",
+      "Decisions by others that are blocking progress",
+      "Items submitted for approval or reimbursement",
+      "External dependencies (implementations, deliveries, etc.)"
+    ]
+  }
+};
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const STORAGE_KEY = 'gtd-mind-sweep-v1';
+let state = buildFreshState();
+
+function buildFreshState() {
+  const s = { sections: {} };
+  for (const section of Object.keys(TRIGGER_LIST)) {
+    s.sections[section] = { open: false, categories: {} };
+    for (const cat of Object.keys(TRIGGER_LIST[section])) {
+      s.sections[section].categories[cat] = {
+        open: false,
+        reviewed: false,
+        hasItems: false,
+        items: []
+      };
+    }
+  }
+  return s;
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    // Merge saved into fresh state so new categories are picked up
+    const fresh = buildFreshState();
+    for (const section of Object.keys(fresh.sections)) {
+      if (saved.sections && saved.sections[section]) {
+        fresh.sections[section].open = !!saved.sections[section].open;
+        for (const cat of Object.keys(fresh.sections[section].categories)) {
+          if (saved.sections[section].categories && saved.sections[section].categories[cat]) {
+            const sc = saved.sections[section].categories[cat];
+            fresh.sections[section].categories[cat] = {
+              open: !!sc.open,
+              reviewed: !!sc.reviewed,
+              hasItems: !!sc.hasItems,
+              items: Array.isArray(sc.items) ? sc.items : []
+            };
+          }
+        }
+      }
+    }
+    state = fresh;
+  } catch (e) { /* ignore corrupt data */ }
+}
+
+let saveTimer = null;
+function saveSession() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }, 300);
+}
+
+// ═══════════════════════════════════════════
+// COUNTING
+// ═══════════════════════════════════════════
+function countTotalCategories() {
+  let n = 0;
+  for (const s of Object.keys(TRIGGER_LIST)) n += Object.keys(TRIGGER_LIST[s]).length;
+  return n;
+}
+
+function countReviewed() {
+  let n = 0;
+  for (const s of Object.keys(state.sections)) {
+    for (const c of Object.keys(state.sections[s].categories)) {
+      if (state.sections[s].categories[c].reviewed) n++;
+    }
+  }
+  return n;
+}
+
+function countCategoryItems(section, cat) {
+  return state.sections[section].categories[cat].items.filter(i => i.text.trim() !== '').length;
+}
+
+function countAllItems() {
+  let total = 0, tasks = 0, projects = 0;
+  for (const s of Object.keys(state.sections)) {
+    for (const c of Object.keys(state.sections[s].categories)) {
+      for (const item of state.sections[s].categories[c].items) {
+        if (item.text.trim() === '') continue;
+        total++;
+        if (item.type === 'project') projects++; else tasks++;
+      }
+    }
+  }
+  return { total, tasks, projects };
+}
+
+// ═══════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════
+function renderApp() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  for (const section of Object.keys(TRIGGER_LIST)) {
+    const sState = state.sections[section];
+    const sDiv = document.createElement('div');
+    sDiv.className = 'section' + (sState.open ? ' open' : '');
+
+    // Section header
+    const sHeader = document.createElement('div');
+    sHeader.className = 'section-header';
+    sHeader.innerHTML = `<span class="chevron ${sState.open ? 'open' : ''}">&#9654;</span><h2>${section}</h2>`;
+
+    const toggleAll = document.createElement('button');
+    toggleAll.className = 'section-toggle-all';
+    toggleAll.textContent = 'Expand all';
+    toggleAll.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cats = Object.keys(sState.categories);
+      const allOpen = cats.every(c => sState.categories[c].open);
+      cats.forEach(c => {
+        sState.categories[c].open = !allOpen;
+        if (!allOpen) sState.categories[c].reviewed = true;
+      });
+      if (!sState.open) sState.open = true;
+      saveSession();
+      renderApp();
+    });
+    sHeader.appendChild(toggleAll);
+
+    sHeader.addEventListener('click', () => {
+      sState.open = !sState.open;
+      saveSession();
+      renderApp();
+    });
+    sDiv.appendChild(sHeader);
+
+    // Section body
+    const sBody = document.createElement('div');
+    sBody.className = 'section-body';
+
+    for (const cat of Object.keys(TRIGGER_LIST[section])) {
+      const cState = sState.categories[cat];
+      const itemCount = countCategoryItems(section, cat);
+      const card = document.createElement('div');
+      card.className = 'card' + (cState.open ? ' open' : '') + (itemCount > 0 ? ' has-items' : '');
+
+      // Card header
+      const cHeader = document.createElement('div');
+      cHeader.className = 'card-header';
+      cHeader.innerHTML = `
+        <span class="chevron ${cState.open ? 'open' : ''}">&#9654;</span>
+        <span class="card-name">${cat}</span>
+        <span class="badge">${itemCount}</span>
+      `;
+      cHeader.addEventListener('click', () => {
+        cState.open = !cState.open;
+        if (cState.open) cState.reviewed = true;
+        saveSession();
+        renderApp();
+      });
+      card.appendChild(cHeader);
+
+      // Card body
+      const cBody = document.createElement('div');
+      cBody.className = 'card-body';
+
+      // Triggers
+      const triggers = document.createElement('div');
+      triggers.className = 'triggers';
+      triggers.innerHTML = '<ul>' + TRIGGER_LIST[section][cat].map(t => `<li>${t}</li>`).join('') + '</ul>';
+      cBody.appendChild(triggers);
+
+      // Checkbox
+      const checkLabel = document.createElement('label');
+      checkLabel.className = 'has-items-check';
+      const checkBox = document.createElement('input');
+      checkBox.type = 'checkbox';
+      checkBox.checked = cState.hasItems;
+      checkBox.addEventListener('change', () => {
+        cState.hasItems = checkBox.checked;
+        if (cState.hasItems && cState.items.length === 0) {
+          cState.items.push({ text: '', type: 'task' });
+        }
+        saveSession();
+        renderApp();
+        // Focus first input after render
+        if (cState.hasItems) {
+          const inputs = card.querySelectorAll('.capture-row input[type="text"]');
+          if (inputs.length) inputs[inputs.length - 1].focus();
+        }
+      });
+      checkLabel.appendChild(checkBox);
+      checkLabel.appendChild(document.createTextNode(' I have items here'));
+      cBody.appendChild(checkLabel);
+
+      // Capture area
+      const captureArea = document.createElement('div');
+      captureArea.className = 'capture-area' + (cState.hasItems ? ' visible' : '');
+
+      cState.items.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'capture-row';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = item.text;
+        input.placeholder = idx === 0 ? 'Describe the task or project\u2026' : '';
+        input.addEventListener('input', () => {
+          item.text = input.value;
+          saveSession();
+          updateExportBtn();
+          // Update badge
+          const count = countCategoryItems(section, cat);
+          card.querySelector('.badge').textContent = count;
+          if (count > 0) card.classList.add('has-items'); else card.classList.remove('has-items');
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (input.value.trim() !== '') {
+              cState.items.push({ text: '', type: 'task' });
+              saveSession();
+              renderApp();
+              // Focus new input
+              const allInputs = document.querySelectorAll('.capture-row input[type="text"]');
+              if (allInputs.length) allInputs[allInputs.length - 1].focus();
+            }
+          }
+        });
+        row.appendChild(input);
+
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'type-toggle' + (item.type === 'project' ? ' project' : '');
+        toggle.textContent = item.type === 'project' ? 'Project' : 'Task';
+        toggle.addEventListener('click', () => {
+          item.type = item.type === 'task' ? 'project' : 'task';
+          toggle.textContent = item.type === 'project' ? 'Project' : 'Task';
+          toggle.classList.toggle('project', item.type === 'project');
+          saveSession();
+        });
+        row.appendChild(toggle);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = 'Remove item';
+        removeBtn.addEventListener('click', () => {
+          cState.items.splice(idx, 1);
+          if (cState.items.length === 0) {
+            cState.hasItems = false;
+          }
+          saveSession();
+          renderApp();
+          updateExportBtn();
+        });
+        row.appendChild(removeBtn);
+
+        captureArea.appendChild(row);
+      });
+
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'add-item-btn';
+      addBtn.textContent = '+ Add item';
+      addBtn.addEventListener('click', () => {
+        cState.items.push({ text: '', type: 'task' });
+        saveSession();
+        renderApp();
+        const allInputs = card.querySelectorAll('.capture-row input[type="text"]');
+        if (allInputs.length) allInputs[allInputs.length - 1].focus();
+      });
+      captureArea.appendChild(addBtn);
+
+      cBody.appendChild(captureArea);
+      card.appendChild(cBody);
+      sBody.appendChild(card);
+    }
+
+    sDiv.appendChild(sBody);
+    app.appendChild(sDiv);
+  }
+
+  updateProgress();
+  updateExportBtn();
+}
+
+function updateProgress() {
+  const total = countTotalCategories();
+  const reviewed = countReviewed();
+  document.getElementById('progress').textContent = `${reviewed} of ${total} categories reviewed`;
+}
+
+function updateExportBtn() {
+  const { total } = countAllItems();
+  document.getElementById('exportBtn').disabled = total === 0;
+}
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function buildExport() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const isoStr = now.toISOString();
+
+  const items = [];
+  for (const s of Object.keys(state.sections)) {
+    for (const c of Object.keys(state.sections[s].categories)) {
+      for (const item of state.sections[s].categories[c].items) {
+        if (item.text.trim() === '') continue;
+        items.push({ section: s, category: c, type: item.type, text: item.text.trim() });
+      }
+    }
+  }
+
+  const { total, tasks, projects } = countAllItems();
+
+  // Plaintext
+  let plain = `GTD MIND SWEEP EXPORT\nGenerated: ${dateStr}\n---\n`;
+  let lastKey = '';
+  for (const item of items) {
+    const key = `${item.section} > ${item.category}`;
+    if (key !== lastKey) {
+      plain += `\n[${key}]\n`;
+      lastKey = key;
+    }
+    plain += `- [${item.type.toUpperCase()}] ${item.text}\n`;
+  }
+  plain += `\n---\nTotal items: ${total} (${tasks} tasks, ${projects} projects)`;
+
+  // JSON
+  const json = {
+    version: "1.0",
+    generated: isoStr,
+    totals: { items: total, tasks, projects },
+    items: items.map(i => ({ section: i.section, category: i.category, type: i.type, text: i.text }))
+  };
+
+  return { plain, json: JSON.stringify(json, null, 2) };
+}
+
+// ═══════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════
+const overlay = document.getElementById('modalOverlay');
+const modal = document.getElementById('modal');
+let focusableEls = [];
+let lastFocused = null;
+
+function openModal() {
+  lastFocused = document.activeElement;
+  const { plain, json } = buildExport();
+  document.getElementById('exportPlaintext').textContent = plain;
+  document.getElementById('exportJson').textContent = json;
+  overlay.classList.add('visible');
+  focusableEls = Array.from(modal.querySelectorAll('button'));
+  if (focusableEls.length) focusableEls[0].focus();
+}
+
+function closeModal() {
+  overlay.classList.remove('visible');
+  if (lastFocused) lastFocused.focus();
+}
+
+document.getElementById('exportBtn').addEventListener('click', openModal);
+document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+
+overlay.addEventListener('click', (e) => {
+  if (e.target === overlay) closeModal();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (!overlay.classList.contains('visible')) return;
+  if (e.key === 'Escape') { closeModal(); return; }
+  if (e.key === 'Tab') {
+    if (focusableEls.length === 0) return;
+    const first = focusableEls[0];
+    const last = focusableEls[focusableEls.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }
+});
+
+document.getElementById('copyJsonBtn').addEventListener('click', () => {
+  const json = document.getElementById('exportJson').textContent;
+  navigator.clipboard.writeText(json).then(() => {
+    const btn = document.getElementById('copyJsonBtn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy JSON', 1500);
+  });
+});
+
+document.getElementById('copyPlaintextBtn').addEventListener('click', () => {
+  const plain = document.getElementById('exportPlaintext').textContent;
+  navigator.clipboard.writeText(plain).then(() => {
+    const btn = document.getElementById('copyPlaintextBtn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy plaintext', 1500);
+  });
+});
+
+// ═══════════════════════════════════════════
+// CLEAR SESSION
+// ═══════════════════════════════════════════
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (confirm('Clear all captured items and start fresh?')) {
+    localStorage.removeItem(STORAGE_KEY);
+    state = buildFreshState();
+    renderApp();
+  }
+});
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+loadSession();
+renderApp();
+</script>
+</body>
+</html>
